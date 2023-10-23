@@ -1,13 +1,13 @@
 const express = require('express');
 const morgan = require('morgan');
 const bcrypt = require('bcrypt');
+const crypto = require('crypto');
 
 const db = require('./db');
 const app = express();
-
+const transporter = require('./nodemailer');
 app.use(express.json());
 app.use(morgan('dev'))
-
 
 const Note = {
     async createNote(req, res) {
@@ -110,7 +110,6 @@ const Note = {
         try {
             const userId = req.body.user.id; // assume que o usuário está autenticado e o ID do usuário está armazenado em req.user.id
 
-
             const query = `
             SELECT *
             FROM note
@@ -131,9 +130,6 @@ const Note = {
 };
 
 const User = {
-
-
-
     async signup(req, res) {
         let response = { error: '' }
         try {
@@ -158,6 +154,100 @@ const User = {
         }
     },
 
+    async forgotPassword(req, res) {
+        const { email } = req.params;
+        const response = { error: '' };
+
+        try {
+            // Verifica se o email existe no banco de dados
+            const user = await db.query('SELECT * FROM users WHERE email = $1', [email]);
+            if (user.rows.length === 0) {
+                return res.status(404).json({ error: 'User not found' });
+            }
+
+            // Gera um PIN de 6 dígitos
+            const pin = crypto.randomInt(100000, 999999);
+
+            // Salva o PIN no banco de dados
+            await db.query('UPDATE users SET pin = $1 WHERE email = $2', [pin, email]);
+
+            const mailOptions = {
+                from: 'vance.app@hotmail.com',
+                to: email,
+                subject: '[VANCE] Recuperação de senha',
+                text: `Seu PIN de recuperação de senha é ${pin}`
+            };
+
+            // Envia o PIN por e-mail
+            await transporter.sendMail(mailOptions);
+
+            response.status = 200;
+            res.status(response.status).json(response);
+
+        } catch (err) {
+            response.error = err.message;
+            response.status = 500;
+            res.status(response.status).json(response);
+        }
+
+    },
+
+    async validatePin(req, res) {
+        const { email, pin } = req.body;
+        const response = { error: '' };
+
+        try {
+            // Verifica se o email existe no banco de dados
+            const user = await db.query('SELECT * FROM users WHERE email = $1', [email]);
+            if (user.rows.length === 0) {
+                return res.status(404).json({ error: 'User not found' });
+            }
+
+            // Verifica se o PIN fornecido corresponde ao PIN armazenado no banco de dados
+            if (user.rows[0].pin !== pin) {
+                response.error = 'Invalid PIN';
+                response.status = 400;
+                return res.status(response.status).json(response);
+            }
+
+            await db.query('UPDATE users SET pin = NULL WHERE email = $1', [email]);
+
+            response.status = 200;
+            res.status(response.status).json(response);
+        } catch (err) {
+            response.error = err.message;
+            response.status = 500;
+            res.status(response.status).json(response);
+        }
+    },
+
+    async resetPassword(req, res) {
+        const { email, newPassword } = req.body;
+        let response = { error: '' };
+
+        try {
+          // Verifica se o email existe no banco de dados
+          const user = await db.query('SELECT * FROM users WHERE email = $1', [email]);
+          if (user.rows.length === 0) {
+            return res.status(404).json({ error: 'User not found' });
+          }
+      
+          // Gera um hash da nova senha
+          const salt = await bcrypt.genSalt(10);
+          const hash = await bcrypt.hash(newPassword, salt);
+      
+          // Atualiza a senha do usuário no banco de dados
+          await db.query('UPDATE users SET password = $1 WHERE email = $2', [hash, email]);
+      
+          response.status = 200;
+          response.message = 'Password changed';
+          res.status(response.status).json(response);
+        } catch (err) {
+            response.error = err.message;
+            response.status = 500;
+            res.status(response.status).json(response);
+        }
+    },
 
     async login(req, res) {
         let response = { error: '' }
@@ -187,7 +277,6 @@ const User = {
             res.status(response.status).json(response);
         }
     }
-
 }
 
 async function getUsers(req, res) {
@@ -227,8 +316,17 @@ app.listen(3000, () => {
 
 
 app.post('/api/signup', User.signup);
+
 app.post('/api/login', User.login);
+
+app.post('/api/forgot-password/:email/code', User.forgotPassword);
+
+app.post('/api/validate-pin', User.validatePin);
+
+app.post('/api/reset-password', User.resetPassword);
+
 app.get('/api/users', getUsers);
+
 app.get('/', (req, res) => {
-    res.sendFile('views/landing.html', {root: __dirname })
+    res.sendFile('views/landing.html', { root: __dirname })
 });
