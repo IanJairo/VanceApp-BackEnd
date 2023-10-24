@@ -233,7 +233,7 @@ const User = {
 
 
             // Lê o conteúdo do arquivo HTML
-            const messageHtml = fs.readFileSync(process.cwd() + './helpers/message.html', 'utf8');
+            const messageHtml = fs.readFileSync(process.cwd() + '/helpers/message.html', 'utf8');
             
 
             // const messageHtml = fs.readFileSync('./helpers/message.html', 'utf8');
@@ -403,5 +403,5 @@ app.post('/api/reset-password', User.resetPassword);
 app.get('/api/users', getUsers);
 
 app.get('/', (req, res) => {
-    res.sendFile(process.cwd() +'views/landing.html');
+    res.sendFile(process.cwd() +'/views/landing.html');
 });
