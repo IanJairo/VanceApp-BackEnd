@@ -233,8 +233,10 @@ const User = {
 
 
             // Lê o conteúdo do arquivo HTML
-            const messageHtml = fs.readFileSync('./helpers/message.html', 'utf8');
+            const messageHtml = fs.readFileSync(process.cwd() + './helpers/message.html', 'utf8');
+            
 
+            // const messageHtml = fs.readFileSync('./helpers/message.html', 'utf8');
 
 
             // Renderiza o HTML com o PIN preenchido
@@ -401,5 +403,5 @@ app.post('/api/reset-password', User.resetPassword);
 app.get('/api/users', getUsers);
 
 app.get('/', (req, res) => {
-    res.sendFile('views/landing.html', { root: __dirname })
-});
+    res.sendFile(process.cwd() +'views/landing.html');
+}
