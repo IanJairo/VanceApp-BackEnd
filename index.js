@@ -404,4 +404,4 @@ app.get('/api/users', getUsers);
 
 app.get('/', (req, res) => {
     res.sendFile(process.cwd() +'views/landing.html');
-}
+});
