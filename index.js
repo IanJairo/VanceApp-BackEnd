@@ -33,12 +33,12 @@ const Note = {
             response.status = 201;
             response.data = note;
 
-            res.status(response.status).json(response);
+            res.json(response);
 
         } catch (err) {
             response.error = err.message;
             response.status = 500;
-            res.status(response.status).json(response);
+            res.json(response);
         }
 
     },
@@ -56,7 +56,7 @@ const Note = {
             if (isAuthor.rows.length === 0) {
                 response.error = 'Note not found or does not belong to user';
                 response.status = 401;
-                return res.status(response.status).json(response);
+                return res.json(response);
             }
 
             const query = `
@@ -74,11 +74,11 @@ const Note = {
             response.status = 200;
             response.data = note;
 
-            res.status(response.status).json(response);
+            res.json(response);
         } catch (err) {
             response.error = err.message;
             response.status = 500;
-            res.status(response.status).json(response);
+            res.json(response);
         }
     },
 
@@ -107,7 +107,7 @@ const Note = {
             const sharedNote = await db.query('SELECT * FROM user_note WHERE note_id = $1', [noteId]);
             if (sharedNote.rows.length === 0) {
                 response = { error: 'Shared note not found', status: 404, message: "Nota compartilhada não encontrada." };
-                return res.status(response.status).json(response);
+                return res.json(response);
             }
 
 
@@ -115,7 +115,7 @@ const Note = {
             const users = await Note.getQueryUsers(sharedNote.rows);
 
             response = { error: null, status: 200, message: "Usuários associados à nota compartilhada.", data: users };
-            res.status(response.status).json(response);
+            res.json(response);
         } catch (err) {
             response = { error: err.message, status: 500, message: "Erro interno do servidor." };
 
@@ -132,7 +132,7 @@ const Note = {
             const sharedNote = await db.query('SELECT * FROM user_note WHERE note_id = $1 AND user_id = $2', [noteId, userId]);
             if (sharedNote.rows.length === 0) {
                 response = { error: 'Shared note not found', status: 404, message: "Nota compartilhada não encontrada." };
-                return res.status(response.status).json(response);
+                return res.json(response);
             }
 
             // Update the can_edit permission of the shared note
@@ -145,11 +145,11 @@ const Note = {
             await db.query(query, values);
 
             response = { error: null, status: 200, message: "Permissão de edição atualizada com sucesso." };
-            res.status(response.status).json(response);
+            res.json(response);
         } catch (err) {
             response.error = err.message;
             response.status = 500;
-            res.status(response.status).json(response);
+            res.json(response);
         }
     },
 
@@ -168,11 +168,11 @@ const Note = {
             await db.query(query, values);
 
             response.status = 204;
-            res.status(response.status).json(response);
+            res.json(response);
         } catch (err) {
             response.error = err.message;
             response.status = 500;
-            res.status(response.status).json(response);
+            res.json(response);
         }
     },
 
@@ -193,11 +193,11 @@ const Note = {
 
             response.data = result.rows;
             response.status = 200;
-            res.status(response.status).json(response);
+            res.json(response);
         } catch (err) {
             response.error = err.message;
             response.status = 500;
-            res.status(response.status).json(response);
+            res.json(response);
         }
     },
 
@@ -212,20 +212,20 @@ const Note = {
 
             if (note.rows.length === 0) {
                 response = { error: 'Note not found', status: 204, message: "Nota inexistente." };
-                return res.status(response.status).json(response);
+                return res.json(response);
             }
 
             // Verifica se o usuário atual é o autor da nota
             if (note.rows[0].user_id !== req.body.user.id) {
                 response = { error: 'Note not found', status: 204, message: "A nota já pertence ao usuário." };
-                return res.status(response.status).json(response);
+                return res.json(response);
             }
 
             // Verifica se o email do destinatário existe no banco de dados
             const recipient = await db.query('SELECT * FROM users WHERE email = $1', [email]);
             if (recipient.rows.length === 0) {
                 response = { error: 'Recipient not found', status: 204, message: "Destinatario não encontrado." };
-                return res.status(response.status).json(response);
+                return res.json(response);
             }
 
             // Verifica se a nota já foi compartilhada com o destinatário
@@ -234,18 +234,18 @@ const Note = {
             if (isShared.rows.length > 0) {
                 console.error("entrou?")
                 response = { error: 'Note already shared with recipient', status: 204, message: "Nota já pertence ao destinatário." };
-                return res.status(response.status).json(response);
+                return res.json(response);
             }
 
             // Compartilha a nota com o destinatário
             await db.query('INSERT INTO user_note (note_id, user_id, can_edit) VALUES ($1, $2, $3)', [noteId, recipient.rows[0].id, canEdit]);
 
             response = { error: null, status: 200, message: "Nota compartilhada." };
-            res.status(response.status).json(response);
+            res.json(response);
         } catch (err) {
             response.error = err.message;
             response.status = 500;
-            res.status(response.status).json(response);
+            res.json(response);
         }
     },
 
@@ -260,13 +260,13 @@ const Note = {
             const sharedNote = await db.query('SELECT * FROM user_note WHERE note_id = $1', [noteId]);
             if (sharedNote.rows.length === 0) {
                 response = { error: 'Shared note not found', status: 404, message: "Nota compartilhada não encontrada." };
-                return res.status(response.status).json(response);
+                return res.json(response);
             }
 
             // Verifica se o usuário atual tem permissão para editar a nota compartilhada
             if (sharedNote.rows[0].user_id !== req.body.user.id || !sharedNote.rows[0].can_edit) {
                 response = { error: 'Forbidden', status: 403, message: "Usuário não tem permissão para editar a nota." };
-                return res.status(response.status).json(response);
+                return res.json(response);
             }
 
             // Atualiza a nota compartilhada
@@ -275,12 +275,12 @@ const Note = {
             await db.query(query, values);
 
             response = { error: null, status: 200, message: "Nota compartilhada atualizada." };
-            res.status(response.status).json(response);
+            res.json(response);
         } catch (err) {
             response.error = err.message;
             response.message = "Erro interno do servidor."
             response.status = 500;
-            res.status(response.status).json(response);
+            res.json(response);
         }
     }
 };
@@ -294,7 +294,7 @@ const User = {
             if (result.rows.length > 0) {
                 response.error = 'Email already exists';
                 response.status = 409;
-                return res.status(response.status).json(response);
+                return res.json(response);
             }
             const hash = await bcrypt.hash(password, 10);
             const insertResult = await db.query('INSERT INTO users (name, email, password) VALUES ($1, $2, $3) RETURNING id', [name, email, hash]);
@@ -302,11 +302,11 @@ const User = {
             response.status = 201;
             response.data = { id: insertResult.rows[0].id };
 
-            res.status(response.status).json(response);
+            res.json(response);
         } catch (err) {
             response.error = err.message;
             response.status = 500;
-            res.status(response.status).json(response);
+            res.json(response);
         }
     },
 
@@ -347,12 +347,12 @@ const User = {
             await transporter.sendMail(mailOptions);
 
             response = {error: null, status: 200, message: "PIN enviado por e-mail."}
-            res.status(response.status).json(response);
+            res.json(response);
 
         } catch (err) {
             response.error = err.message;
             response.status = 500;
-            res.status(response.status).json(response);
+            res.json(response);
         }
 
     },
@@ -372,17 +372,17 @@ const User = {
             if (user.rows[0].pin !== pin) {
                 response.error = 'Invalid PIN';
                 response.status = 400;
-                return res.status(response.status).json(response);
+                return res.json(response);
             }
 
             await db.query('UPDATE users SET pin = NULL WHERE email = $1', [email]);
 
             response.status = 200;
-            res.status(response.status).json(response);
+            res.json(response);
         } catch (err) {
             response.error = err.message;
             response.status = 500;
-            res.status(response.status).json(response);
+            res.json(response);
         }
     },
 
@@ -406,11 +406,11 @@ const User = {
 
             response.status = 200;
             response.message = 'Password changed';
-            res.status(response.status).json(response);
+            res.json(response);
         } catch (err) {
             response.error = err.message;
             response.status = 500;
-            res.status(response.status).json(response);
+            res.json(response);
         }
     },
 
@@ -440,7 +440,7 @@ const User = {
             response.error = err.message;
             response.message = "Erro interno do servidor."
             response.status = 500;
-            resjson(response);
+            res.json(response);
         }
     }
 }
