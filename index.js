@@ -496,7 +496,7 @@ app.post('/api/signup', User.signup);
 
 app.post('/api/login', User.login);
 
-app.post('/api/forgot-password/:email/code', User.forgotPassword);
+app.get('/api/forgot-password/:email/code', User.forgotPassword);
 
 app.post('/api/validate-pin', User.validatePin);
 
