@@ -393,7 +393,8 @@ const User = {
             // Verifica se o email existe no banco de dados
             const user = await db.query('SELECT * FROM users WHERE email = $1', [email]);
             if (user.rows.length === 0) {
-                return res.status(404).json({ error: 'User not found' });
+                response = { error: 'User not found', status: 404, message: "Usuário não encontrado." };
+                return res.json(response);
             }
 
             // Gera um hash da nova senha
@@ -403,12 +404,10 @@ const User = {
             // Atualiza a senha do usuário no banco de dados
             await db.query('UPDATE users SET password = $1 WHERE email = $2', [hash, email]);
 
-            response.status = 200;
-            response.message = 'Password changed';
+            response = {error: '', status: 200, message: "Senha atualizada com sucesso."}
             res.json(response);
         } catch (err) {
-            response.error = err.message;
-            response.status = 500;
+            response = { error: err.message, status: 500, message: "Erro interno do servidor." };
             res.json(response);
         }
     },
