@@ -277,9 +277,7 @@ const Note = {
             response = { error: null, status: 200, message: "Nota compartilhada atualizada." };
             res.json(response);
         } catch (err) {
-            response.error = err.message;
-            response.message = "Erro interno do servidor."
-            response.status = 500;
+            response = { error: err.message, status: 500, message: "Erro interno do servidor." };
             res.json(response);
         }
     }
@@ -292,20 +290,18 @@ const User = {
             const { name, email, password } = req.body;
             const result = await db.query('SELECT * FROM users WHERE email = $1', [email]);
             if (result.rows.length > 0) {
-                response.error = 'Email already exists';
-                response.status = 409;
+
+                response = { error: "Email already exists", status: 409, message: "E-mail já cadastrado."}
                 return res.json(response);
             }
             const hash = await bcrypt.hash(password, 10);
             const insertResult = await db.query('INSERT INTO users (name, email, password) VALUES ($1, $2, $3) RETURNING id', [name, email, hash]);
 
-            response.status = 201;
-            response.data = { id: insertResult.rows[0].id };
+            response = { error: '', status: 201, message: "Usuário cadastrado com sucesso." }
 
             res.json(response);
         } catch (err) {
-            response.error = err.message;
-            response.status = 500;
+            response = { error: err.message, status: 500, message: "Erro interno do servidor." };
             res.json(response);
         }
     },
