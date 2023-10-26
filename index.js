@@ -319,7 +319,7 @@ const User = {
             const user = await db.query('SELECT * FROM users WHERE email = $1', [email]);
             if (user.rows.length === 0) {
                 response = { error: 'User not found', status: 404, message: "Usuário não encontrado." };
-                return res.status(404).json(response);
+                return res.json(response);
             }
 
             // Gera um PIN de 6 dígitos
