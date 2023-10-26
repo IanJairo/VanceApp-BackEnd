@@ -359,7 +359,7 @@ const User = {
 
     async validatePin(req, res) {
         const { email, pin } = req.body;
-        const response = { error: '' };
+        let response = { error: '' };
 
         try {
             // Verifica se o email existe no banco de dados
