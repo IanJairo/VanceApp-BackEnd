@@ -422,25 +422,25 @@ const User = {
             if (result.rows.length === 0) {
                 response.error = 'E-mail ou senha errados!';
                 response.status = 401;
-                return res.status(response.status).json(response);
+                return res.json(response);
             }
             const user = result.rows[0];
             const passwordMatch = await bcrypt.compare(password, user.password);
             if (!passwordMatch) {
                 response.error = 'E-mail ou senha errados!';
                 response.status = 401;
-                return res.status(response.status).json(response);
+                return res.json(response);
             }
 
             response.status = 200;
             delete user.password
             response.data = { user, message: 'Login efetuado com sucesso' };
-            res.status(response.status).json(response);
+            res.json(response);
         } catch (err) {
             response.error = err.message;
             response.message = "Erro interno do servidor."
             response.status = 500;
-            res.status(response.status).json(response);
+            resjson(response);
         }
     }
 }
