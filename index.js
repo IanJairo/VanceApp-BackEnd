@@ -311,9 +311,9 @@ const User = {
     },
 
     async forgotPassword(req, res) {
-        const { email } = req.params;
-        const response = { error: '' };
-
+        const email  = req.params.email;
+        let response = { error: '' };
+        console.log(email)
         try {
             // Verifica se o email existe no banco de dados
             const user = await db.query('SELECT * FROM users WHERE email = $1', [email]);
@@ -346,7 +346,7 @@ const User = {
             // Envia o PIN por e-mail
             await transporter.sendMail(mailOptions);
 
-            response = {error: null, status: 200, message: "PIN enviado por e-mail."}
+            response = {error: '', status: 200, message: "PIN enviado por e-mail."}
             res.json(response);
 
         } catch (err) {
@@ -496,7 +496,7 @@ app.post('/api/signup', User.signup);
 
 app.post('/api/login', User.login);
 
-app.get('/api/forgot-password/:email/code', User.forgotPassword);
+app.post('/api/forgot-password/:email/code', User.forgotPassword);
 
 app.post('/api/validate-pin', User.validatePin);
 
