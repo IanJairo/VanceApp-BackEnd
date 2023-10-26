@@ -318,7 +318,8 @@ const User = {
             // Verifica se o email existe no banco de dados
             const user = await db.query('SELECT * FROM users WHERE email = $1', [email]);
             if (user.rows.length === 0) {
-                return res.status(404).json({ error: 'User not found' });
+                response = { error: 'User not found', status: 404, message: "Usuário não encontrado." };
+                return res.status(404).json(response);
             }
 
             // Gera um PIN de 6 dígitos
@@ -331,13 +332,8 @@ const User = {
             // Lê o conteúdo do arquivo HTML
             const messageHtml = fs.readFileSync(process.cwd() + '/helpers/message.html', 'utf8');
 
-
-            // const messageHtml = fs.readFileSync('./helpers/message.html', 'utf8');
-
-
             // Renderiza o HTML com o PIN preenchido
             const renderedHtml = ejs.render(messageHtml, { "pin": pin, "user": user.rows[0].name });
-
 
             const mailOptions = {
                 from: 'vance.app@hotmail.com',
@@ -350,7 +346,7 @@ const User = {
             // Envia o PIN por e-mail
             await transporter.sendMail(mailOptions);
 
-            response.status = 200;
+            response = {error: null, status: 200, message: "PIN enviado por e-mail."}
             res.status(response.status).json(response);
 
         } catch (err) {
@@ -424,23 +420,25 @@ const User = {
             const { email, password } = req.body;
             const result = await db.query('SELECT * FROM users WHERE email = $1', [email]);
             if (result.rows.length === 0) {
-                response.error = 'Email or password is incorrect';
+                response.error = 'E-mail ou senha errados!';
                 response.status = 401;
                 return res.status(response.status).json(response);
             }
             const user = result.rows[0];
             const passwordMatch = await bcrypt.compare(password, user.password);
             if (!passwordMatch) {
-                response.error = 'Email or password is incorrect';
+                response.error = 'E-mail ou senha errados!';
                 response.status = 401;
                 return res.status(response.status).json(response);
             }
 
             response.status = 200;
-            response.data = { id: user.id };
+            delete user.password
+            response.data = { user, message: 'Login efetuado com sucesso' };
             res.status(response.status).json(response);
         } catch (err) {
             response.error = err.message;
+            response.message = "Erro interno do servidor."
             response.status = 500;
             res.status(response.status).json(response);
         }
@@ -498,7 +496,7 @@ app.post('/api/signup', User.signup);
 
 app.post('/api/login', User.login);
 
-app.post('/api/forgot-password/:email/code', User.forgotPassword);
+app.get('/api/forgot-password/:email/code', User.forgotPassword);
 
 app.post('/api/validate-pin', User.validatePin);
 
