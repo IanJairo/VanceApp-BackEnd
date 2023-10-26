@@ -365,23 +365,22 @@ const User = {
             // Verifica se o email existe no banco de dados
             const user = await db.query('SELECT * FROM users WHERE email = $1', [email]);
             if (user.rows.length === 0) {
-                return res.status(404).json({ error: 'User not found' });
+                response = { error: 'User not found', status: 404, message: "Usuário não encontrado." };
+                return res.json(response);
             }
 
             // Verifica se o PIN fornecido corresponde ao PIN armazenado no banco de dados
             if (user.rows[0].pin !== pin) {
-                response.error = 'Invalid PIN';
-                response.status = 400;
+                response = { error: 'Invalid PIN', status: 401, message: "PIN inválido." };
                 return res.json(response);
             }
 
             await db.query('UPDATE users SET pin = NULL WHERE email = $1', [email]);
 
-            response.status = 200;
+            response = { error: '', status: 200, message: "PIN validado." };
             res.json(response);
         } catch (err) {
-            response.error = err.message;
-            response.status = 500;
+            response = { error: err.message, status: 500, message: "Erro interno do servidor." };
             res.json(response);
         }
     },
