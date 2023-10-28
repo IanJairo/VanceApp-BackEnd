@@ -459,7 +459,7 @@ async function getNotes(req, res) {
     }
 }
 // Get all notes 
-app.get('/api/notes', Note.getNotes);
+app.post('/api/all-notes', Note.getNotes);
 
 // Add a new note
 app.post('/api/notes', Note.createNote);
