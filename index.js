@@ -1,6 +1,6 @@
-const {Note} = require('./Controllers/notes');
-const {User} = require('./Controllers/user');
-
+const { Note } = require('./Controllers/notes');
+const { User } = require('./Controllers/user');
+const { verifyJWT } = require('./helpers/jwt/jwt');
 
 const express = require('express');
 const morgan = require('morgan');
@@ -23,35 +23,38 @@ async function getUsers(req, res) {
 
 
 // Get all notes 
-app.post('/api/notes/get', Note.getNotes);
+app.post('/api/notes/get', verifyJWT.authenticateToken, Note.getNotes);
 
 // Add a new note
-app.post('/api/notes', Note.createNote);
+app.post('/api/notes', verifyJWT.authenticateToken, Note.createNote);
 
 // Update a note
-app.put('/api/notes/:id', Note.updateNote);
+app.put('/api/notes/:id', verifyJWT.authenticateToken, Note.updateNote);
 
 // Delete a note
-app.delete('/api/notes/:id', Note.deleteNote);
+app.delete('/api/notes/:id', verifyJWT.authenticateToken, Note.deleteNote);
 
 // Favoritar Notas
-app.post('/api/notes/:id/favorite', Note.favoriteNote);
+app.post('/api/notes/:id/favorite', verifyJWT.authenticateToken, Note.favoriteNote);
 
 app.listen(3000, () => {
     console.log('Server on port 3000')
 });
 
 // Share a note with another user
-app.post('/api/notes/share', Note.shareNote);
+app.post('/api/notes/share', verifyJWT.authenticateToken, Note.shareNote);
 
 // Update a shared note
-app.put('/api/notes/shared/:id', Note.editSharedNotes);
+app.put('/api/notes/shared/:id', verifyJWT.authenticateToken, Note.editSharedNotes);
 
 // Get all users associated with a shared note
-app.get('/api/notes/shared/:noteId/users/', Note.getSharedNoteUsers);
+app.get('/api/notes/shared/:noteId/users/', verifyJWT.authenticateToken, Note.getSharedNoteUsers);
 
 // Update the can_edit permission of a shared note
-app.post('/api/notes/shared/permission', Note.updateNotePermission);
+app.post('/api/notes/shared/permission', verifyJWT.authenticateToken, Note.updateNotePermission);
+
+// Get a list of favorite 
+app.get('/api/notes/favorites/:userId', verifyJWT.authenticateToken, Note.getFavoriteNotes);
 
 app.post('/api/signup', User.signup);
 
@@ -63,7 +66,7 @@ app.post('/api/validate-pin', User.validatePin);
 
 app.post('/api/reset-password', User.resetPassword);
 
-app.get('/api/users', getUsers);
+app.get('/api/users', verifyJWT.authenticateToken, getUsers);
 
 app.get('/', (req, res) => {
     res.sendFile(process.cwd() + '/views/landing.html');

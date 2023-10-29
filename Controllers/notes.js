@@ -1,5 +1,6 @@
 
 const db = require('./../db');
+const {User} = require('./user');
 const Note = {
     async createNote(req, res) {
         let response = { error: '' }
@@ -18,6 +19,13 @@ const Note = {
             const result = await db.query(query, values);
 
             const note = result.rows[0];
+
+            // Atualiza o campo total_notes do usuário
+            const resp = await User.updateUserTotalNotes(userId);
+            if (!resp) {
+                response = { error: 'Internal server error', status: 500, message: "Erro interno do servidor." };
+                return res.json(response);
+            }
 
             response.status = 201;
             response.data = note;
@@ -50,12 +58,12 @@ const Note = {
 
             const query = `
                 UPDATE note
-                SET title = $1, content = $2
+                SET title = $1, content = $2, isFavorite = $4
                 WHERE id = $3
                 RETURNING *
                 `;
 
-            const values = [title, content, noteId];
+            const values = [title, content, noteId, isFavorite];
             const result = await db.query(query, values);
 
             const note = result.rows[0];
@@ -145,7 +153,6 @@ const Note = {
         }
     },
 
-    // Agora preciso de uma função para alterar a permissão de edição de uma nota compartilhada
     async updateNotePermission(req, res) {
         let response = { error: '' };
         try {
@@ -251,13 +258,18 @@ const Note = {
             const isShared = await db.query('SELECT * FROM user_note WHERE note_id = $1 AND user_id = $2', [noteId, recipient.rows[0].id]);
 
             if (isShared.rows.length > 0) {
-                console.error("entrou?")
                 response = { error: 'Note already shared with recipient', status: 204, message: "Nota já pertence ao destinatário." };
                 return res.json(response);
             }
 
             // Compartilha a nota com o destinatário
             await db.query('INSERT INTO user_note (note_id, user_id, can_edit) VALUES ($1, $2, $3)', [noteId, recipient.rows[0].id, canEdit]);
+
+            const resp = await Note.updateUserSharedNotes(recipient.rows[0].id);
+            if (!resp) {
+                response = { error: 'Internal server error', status: 500, message: "Erro interno do servidor." };
+                return res.json(response);
+            }
 
             response = { error: null, status: 200, message: "Nota compartilhada." };
             res.json(response);
@@ -298,8 +310,28 @@ const Note = {
             response = { error: err.message, status: 500, message: "Erro interno do servidor." };
             res.json(response);
         }
+    },
+
+
+    async getFavoriteNotes(req, res) {
+        const userId = req.params.userId;
+        let response = { error: '' };
+
+        try {
+            const result = await pool.query(
+                'SELECT * FROM note WHERE user_id = $1 AND isFavorite = true',
+                [userId]
+            );
+
+            response = { error: null, status: 200, message: "Notas favoritas do usuário.", data: result.rows };
+
+            res.json(response);
+        } catch (err) {
+            response = { error: err.message, status: 500, message: "Erro interno do servidor." };
+            res.json(response);
+        }
     }
 
 };
 
-module.exports = {Note};
+module.exports = { Note };

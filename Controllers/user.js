@@ -1,6 +1,8 @@
+require('dotenv').config();
 
 const bcrypt = require('bcrypt');
 const crypto = require('crypto');
+const jwt = require('jsonwebtoken');
 
 const ejs = require('ejs');
 const fs = require('fs');
@@ -8,8 +10,42 @@ const db = require('./../db');
 const transporter = require('./../helpers/nodemailer');
 
 const User = {
+    async updateUserTotalNotes(userId) {
+        try {
+            const result = await pool.query(
+                'UPDATE users SET total_notes = total_notes + 1 WHERE id = $1 RETURNING *',
+                [userId]
+            );
 
-    async signup (req, res)  {
+            if (result.rows.length === 0) {
+                return false
+            }
+
+            return true
+        } catch (err) {
+            return false
+        }
+    },
+
+    async updateUserSharedNotes(userId) {
+        try {
+            const result = await pool.query(
+                'UPDATE users SET shared_notes = shared_notes + 1 WHERE id = $1 RETURNING *',
+                [userId]
+            );
+
+
+            if (result.rows.length === 0) {
+                return false
+            }
+
+            return true
+        } catch (err) {
+            return false
+        }
+    },
+
+    async signup(req, res) {
         let response = { error: '' }
         try {
             const { name, email, password } = req.body;
@@ -31,7 +67,7 @@ const User = {
         }
     },
 
-    async forgotPassword (req, res)  {
+    async forgotPassword(req, res) {
         const email = req.params.email;
         let response = { error: '' };
         console.log(email)
@@ -78,7 +114,7 @@ const User = {
 
     },
 
-    async validatePin (req, res)  {
+    async validatePin(req, res) {
         const { email, pin } = req.body;
         let response = { error: '' };
 
@@ -105,7 +141,7 @@ const User = {
             res.json(response);
         }
     },
-    async resetPassword (req, res)  {
+    async resetPassword(req, res) {
         const { email, newPassword } = req.body;
         let response = { error: '' };
 
@@ -132,8 +168,10 @@ const User = {
         }
     },
 
-    async login (req, res)  {
+    async login(req, res) {
         let response = { error: '' }
+        const secret = process.env.JWT_SECRET;
+        console.log('secret', secret)
         try {
             const { email, password } = req.body;
             const result = await db.query('SELECT * FROM users WHERE email = $1', [email]);
@@ -152,7 +190,8 @@ const User = {
 
             response.status = 200;
             delete user.password
-            response.data = { user, message: 'Login efetuado com sucesso' };
+            const token = jwt.sign({ userId: user.id }, secret, { expiresIn: '1h' });
+            response.data = { user, token, message: 'Login efetuado com sucesso' };
             res.json(response);
         } catch (err) {
             response.error = err.message;
