@@ -12,7 +12,7 @@ const transporter = require('./../helpers/nodemailer');
 const User = {
     async updateUserTotalNotes(userId) {
         try {
-            const result = await pool.query(
+            const result = await db.query(
                 'UPDATE users SET total_notes = total_notes + 1 WHERE id = $1 RETURNING *',
                 [userId]
             );
@@ -29,7 +29,7 @@ const User = {
 
     async updateUserSharedNotes(userId) {
         try {
-            const result = await pool.query(
+            const result = await db.query(
                 'UPDATE users SET shared_notes = shared_notes + 1 WHERE id = $1 RETURNING *',
                 [userId]
             );
