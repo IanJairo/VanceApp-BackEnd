@@ -47,6 +47,9 @@ app.put('/api/notes/shared/:id', verifyJWT.authenticateToken, Note.editSharedNot
 // Get all users associated with a shared note
 app.get('/api/notes/shared/:noteId/users/', verifyJWT.authenticateToken, Note.getSharedNoteUsers);
 
+// Get all shared notes of a user
+app.get('/api/notes/shared/user/:userId', verifyJWT.authenticateToken, Note.getSharedNotes);
+
 // Update the can_edit permission of a shared note
 app.post('/api/notes/shared/permission', verifyJWT.authenticateToken, Note.updateNotePermission);
 

@@ -305,13 +305,33 @@ const Note = {
         }
     },
 
+    async getSharedNotes(req, res) {
+        let response = { error: '' };
+        try {
+            const userId = req.params.userId;
+            const query = `
+      SELECT note.*, shared_note.can_edit
+      FROM note
+      JOIN shared_note ON note.id = shared_note.note_id
+      WHERE shared_note.user_id = $1
+    `;
+            const result = await db.query(query, [userId]);
+            const notes = result.rows;
+
+            response = { error: null, status: 200, message: "Notas compartilhadas do usuário.", data: notes };
+            res.json(response);
+        } catch (err) {
+            response = { error: err.message, status: 500, message: "Erro interno do servidor." };
+            res.json(response);
+        }
+    },
 
     async getFavoriteNotes(req, res) {
         const userId = req.params.userId;
         let response = { error: '' };
 
         try {
-            const result = await pool.query(
+            const result = await db.query(
                 'SELECT * FROM note WHERE user_id = $1 AND isFavorite = true',
                 [userId]
             );
