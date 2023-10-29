@@ -1,4 +1,4 @@
-require('dotenv').config();
+// require('dotenv').config();
 
 const bcrypt = require('bcrypt');
 const crypto = require('crypto');
