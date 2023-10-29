@@ -1,6 +1,6 @@
 
 const db = require('./../db');
-const {User} = require('./user');
+const { User } = require('./user');
 const Note = {
     async createNote(req, res) {
         let response = { error: '' }
@@ -21,7 +21,7 @@ const Note = {
             const note = result.rows[0];
 
             // Atualiza o campo total_notes do usuário
-            const resp = await User.updateUserTotalNotes(userId);
+            const resp = await User.updateUserTotalNotes(userId, true);
             if (!resp) {
                 response = { error: 'Internal server error', status: 500, message: "Erro interno do servidor." };
                 return res.json(response);
@@ -41,10 +41,11 @@ const Note = {
     },
 
     async updateNote(req, res) {
+        console.log('update note')
         let response = { error: '' }
         try {
 
-            const { title, content } = req.body;
+            const { title, content, isFavorite } = req.body;
             const userId = req.body.user.id; // assume que o usuário está autenticado e o ID do usuário está armazenado em req.user.id
             const noteId = req.params.id;
             const isAuthor = await db.query('SELECT * FROM note WHERE id = $1 AND user_id = $2', [noteId, userId]);
@@ -66,6 +67,13 @@ const Note = {
             const values = [title, content, noteId, isFavorite];
             const result = await db.query(query, values);
 
+            console.log('antes ')
+            const resp = await User.updateUserFavoritesNotes(userId);
+            if (!resp) {
+                response = { error: 'Internal server error', status: 500, message: "Erro interno do servidor." };
+                return res.json(response);
+            }
+
             const note = result.rows[0];
 
             response.status = 200;
@@ -79,39 +87,7 @@ const Note = {
         }
     },
 
-    async favoriteNote(req, res) {
-        const noteId = req.params.id;
-        const userId = req.body.user.id;
 
-
-        try {
-            const result = await pool.query(
-                'SELECT * FROM notes WHERE id = $1',
-                [noteId]
-            );
-
-            if (result.rows.length === 0) {
-                return res.status(404).json({ error: 'Note not found' });
-            }
-
-            const note = result.rows[0];
-
-            if (note.favorites.includes(userId)) {
-                return res.status(400).json({ error: 'Note already favorited' });
-            }
-
-            note.favorites.push(userId);
-
-            await pool.query(
-                'UPDATE notes SET favorites = $1 WHERE id = $2',
-                [note.favorites, noteId]
-            );
-
-            res.json({ message: 'Note favorited successfully' });
-        } catch (err) {
-            res.status(500).json({ error: err.message });
-        }
-    },
 
     async getQueryUsers(users) {
         let result = [];
@@ -196,6 +172,23 @@ const Note = {
             const values = [noteId];
             await db.query(query, values);
 
+
+            const resp = await User.updateUserTotalNotes(req.body.user.id, false);
+            if (!resp) {
+                response = { error: 'Internal server error', status: 500, message: "Erro interno do servidor." };
+                return res.json(response);
+            }
+
+            // Delete all shared notes associated with the note
+            await db.query('DELETE FROM user_note WHERE note_id = $1', [noteId]);
+
+            // Chamar a função que conta as notas favoritas do usuário
+            const resp2 = await User.updateUserFavoritesNotes(req.body.user.id);
+            if (!resp2) {
+                response = { error: 'Internal server error', status: 500, message: "Erro interno do servidor." };
+                return res.json(response);
+            }
+
             response = { error: null, status: 200, message: "Nota deletada." };
             res.json(response);
         } catch (err) {
@@ -265,7 +258,7 @@ const Note = {
             // Compartilha a nota com o destinatário
             await db.query('INSERT INTO user_note (note_id, user_id, can_edit) VALUES ($1, $2, $3)', [noteId, recipient.rows[0].id, canEdit]);
 
-            const resp = await Note.updateUserSharedNotes(recipient.rows[0].id);
+            const resp = await Note.updateUserSharedNotes(recipient.rows[0].id, true);
             if (!resp) {
                 response = { error: 'Internal server error', status: 500, message: "Erro interno do servidor." };
                 return res.json(response);

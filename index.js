@@ -34,9 +34,6 @@ app.put('/api/notes/:id', verifyJWT.authenticateToken, Note.updateNote);
 // Delete a note
 app.delete('/api/notes/:id', verifyJWT.authenticateToken, Note.deleteNote);
 
-// Favoritar Notas
-app.post('/api/notes/:id/favorite', verifyJWT.authenticateToken, Note.favoriteNote);
-
 app.listen(3000, () => {
     console.log('Server on port 3000')
 });

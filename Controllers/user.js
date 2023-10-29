@@ -10,12 +10,50 @@ const db = require('./../db');
 const transporter = require('./../helpers/nodemailer');
 
 const User = {
-    async updateUserTotalNotes(userId) {
+    async updateUserFavoritesNotes(userId) {
+    console.log('updateUserFavoritesNotes')
         try {
-            const result = await db.query(
-                'UPDATE users SET total_notes = total_notes + 1 WHERE id = $1 RETURNING *',
-                [userId]
-            );
+
+            const q = `
+                SELECT COUNT(*) FROM note WHERE user_id = $1 AND isFavorite = true
+            `
+            const r = await db.query(q, [userId]);
+            const numberOfFavoriteNotes = r.rows[0].count;
+            console.log('numberOfFavoriteNotes', numberOfFavoriteNotes)
+
+
+            // Atualiza o campo total_favorite_notes na tabela users
+            const query = `
+                UPDATE users
+                SET favorite_notes = $2
+                WHERE id = $1
+            `;
+
+          await db.query(query, [userId, numberOfFavoriteNotes]);
+
+            return true;
+        } catch (err) {
+            return false;
+        }
+    },
+
+
+    async updateUserTotalNotes(userId, increment) {
+        try {
+
+            let query = `
+            UPDATE users 
+            SET total_notes = total_notes           `;
+
+            if (increment) {
+                query += '+ 1';
+            } else {
+                query += '- 1';
+            }
+
+            query += ' WHERE id = $1 RETURNING *';
+
+            const result = await db.query(query, [userId]);
 
             if (result.rows.length === 0) {
                 return false
@@ -27,13 +65,20 @@ const User = {
         }
     },
 
-    async updateUserSharedNotes(userId) {
+    async updateUserSharedNotes(userId, increment) {
         try {
-            const result = await db.query(
-                'UPDATE users SET shared_notes = shared_notes + 1 WHERE id = $1 RETURNING *',
-                [userId]
-            );
+            let query = `
+            UPDATE users
+            SET total_shared_notes = total_shared_notes           `;
+            if (increment) {
+                query += '+ 1';
+            } else {
+                query += '- 1';
+            }
 
+            query += ' WHERE id = $1 RETURNING *';
+
+            const result = await db.query(query, [userId]);
 
             if (result.rows.length === 0) {
                 return false
@@ -169,6 +214,7 @@ const User = {
     },
 
     async login(req, res) {
+        console.log('login')
         let response = { error: '' }
         const secret = process.env.JWT_SECRET;
         console.log('secret', secret)
