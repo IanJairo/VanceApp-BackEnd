@@ -113,8 +113,8 @@ const Note = {
             // Verifica se a nota compartilhada existe no banco de dados
             const sharedNote = await db.query('SELECT * FROM user_note WHERE note_id = $1', [noteId]);
             if (sharedNote.rows.length === 0) {
-                response = { error: 'Shared note not found', status: 404, message: "Nota compartilhada não encontrada." };
-                return res.json(response);
+                 response = { message: "Nota ainda não foi compartilhada."}
+                 return res.json(response);
             }
 
 
