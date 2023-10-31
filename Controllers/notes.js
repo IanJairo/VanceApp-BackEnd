@@ -93,7 +93,7 @@ const Note = {
         let result = [];
         for (let i = 0; i < users.length; i++) {
             const query = `
-                SELECT name, email
+                SELECT name, email, id
                 FROM users
                 WHERE id = $1
             `;
