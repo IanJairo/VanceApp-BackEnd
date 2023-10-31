@@ -310,10 +310,10 @@ const Note = {
         try {
             const userId = req.params.userId;
             const query = `
-      SELECT note.*, shared_note.can_edit
+      SELECT note.*, user_note.can_edit
       FROM note
-      JOIN shared_note ON note.id = shared_note.note_id
-      WHERE shared_note.user_id = $1
+      JOIN user_note ON note.id = user_note.note_id
+      WHERE user_note.user_id = $1
     `;
             const result = await db.query(query, [userId]);
             const notes = result.rows;
