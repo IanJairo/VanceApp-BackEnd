@@ -69,7 +69,7 @@ const User = {
         try {
             let query = `
             UPDATE users
-            SET total_shared_notes = total_shared_notes           `;
+            SET shared_notes = shared_notes           `;
             if (increment) {
                 query += '+ 1';
             } else {
