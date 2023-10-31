@@ -258,7 +258,7 @@ const Note = {
             // Compartilha a nota com o destinatário
             await db.query('INSERT INTO user_note (note_id, user_id, can_edit) VALUES ($1, $2, $3)', [noteId, recipient.rows[0].id, canEdit]);
 
-            const resp = await Note.updateUserSharedNotes(recipient.rows[0].id, true);
+            const resp = await User.updateUserSharedNotes(recipient.rows[0].id, true);
             if (!resp) {
                 response = { error: 'Internal server error', status: 500, message: "Erro interno do servidor." };
                 return res.json(response);
